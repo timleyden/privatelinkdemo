@@ -1,4 +1,5 @@
 [![Deploy to Azure](http://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ftimleyden%2Fprivatelinkdemo%2Fmaster%2Fdeploy.json)
+[![Viszualize](http://armviz.io/visualizebutton.png)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Ftimleyden%2Fprivatelinkdemo%2fmaster%2Fdeploy.json) 
 # Private Link example
 A sample ARM template that deploys
 1. 2 Peered VNets
