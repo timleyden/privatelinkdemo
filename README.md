@@ -8,3 +8,4 @@ A sample ARM template that deploys
 4. a Private link enabling access to database from the 2nd virtual network
 
 This was originally put together to test connecting to Azure sql from another service like PowerBI via Azure Firewall and private endpoints, but this setup can be tweaked to test a number of different private link and peering scenarios.
+![highlevel design image](./privatelinklab.png)
