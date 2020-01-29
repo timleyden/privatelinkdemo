@@ -181,7 +181,12 @@
                 "subnet": {
                     "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'VirtualNetworkPrivateLink', 'Subnet-2' )]"
                 }
-            }
+            },
+            "dependsOn":[
+                 "[resourceId('Microsoft.Network/virtualNetworks','VirtualNetworkPrivateLink')]",
+                 "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+            ]
+
         },{
             "name": "AzureFirewallPrivateLinkDemo",
             "type": "Microsoft.Network/azureFirewalls",
