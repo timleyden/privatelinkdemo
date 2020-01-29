@@ -1,80 +1,84 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
-    "parameters": {"SqlServerPassword": {
-       "type": "securestring",
-       "metadata": {
-            "description": "admin password used when creating sql server"
+    "parameters": {
+        "SqlServerPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "admin password used when creating sql server"
+            }
         }
-    }},
+    },
     "variables": {
         "sqlServerName": "[concat('sqlserver', uniqueString(resourceGroup().id))]",
         "sqlDatabaseName": "[concat(variables('sqlServerName'),'/PrivateLinkDemoDB')]"
     },
-    
+
     "resources": [
-    {
-        "name": "VirtualNetworkFirewall",
-        "type": "Microsoft.Network/virtualNetworks",
-        "apiVersion": "2018-08-01",
-        "location": "[resourceGroup().location]",
-        "tags": {
-            "displayName": "VNet containing Firewall"
-        },
-        "properties": {
-            "addressSpace": {
-                "addressPrefixes": [
-                    "10.0.0.0/16"
-                ]
+        {
+            "name": "VirtualNetworkFirewall",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "VNet containing Firewall"
             },
-            "subnets": [
-                {
-                    "name": "AzureFirewallSubnet",
-                    "properties": {
-                        "addressPrefix": "10.0.0.0/24"
-                    }
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16"
+                    ]
                 },
-                {
-                    "name": "Subnet-2",
-                    "properties": {
-                        "addressPrefix": "10.0.1.0/24"
+                "subnets": [
+                    {
+                        "name": "AzureFirewallSubnet",
+                        "properties": {
+                            "addressPrefix": "10.0.0.0/24"
+                        }
+                    },
+                    {
+                        "name": "Subnet-2",
+                        "properties": {
+                            "addressPrefix": "10.0.1.0/24"
+                        }
                     }
-                }
-            ]
-        }
-    },{
-        "name": "VirtualNetworkPrivateLink",
-        "type": "Microsoft.Network/virtualNetworks",
-        "apiVersion": "2018-08-01",
-        "location": "[resourceGroup().location]",
-        "tags": {
-            "displayName": "VNet containing private link"
-        },
-        "properties": {
-            "addressSpace": {
-                "addressPrefixes": [
-                    "10.1.0.0/16"
                 ]
+            }
+        },
+        {
+            "name": "VirtualNetworkPrivateLink",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "VNet containing private link"
             },
-            "subnets": [
-                {
-                    "name": "Subnet-1",
-                    "properties": {
-                        "addressPrefix": "10.1.0.0/24"
-                    }
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.1.0.0/16"
+                    ]
                 },
-                {
-                    "name": "Subnet-2",
-                    "properties": {
-                        "addressPrefix": "10.1.1.0/24",
-                        "privateEndpointNetworkPolicies": "Disabled",
-                        "privateLinkServiceNetworkPolicies": "Enabled"
+                "subnets": [
+                    {
+                        "name": "Subnet-1",
+                        "properties": {
+                            "addressPrefix": "10.1.0.0/24"
+                        }
+                    },
+                    {
+                        "name": "Subnet-2",
+                        "properties": {
+                            "addressPrefix": "10.1.1.0/24",
+                            "privateEndpointNetworkPolicies": "Disabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
                     }
-                }
-            ]
-        }
-    },
-      {"apiVersion": "2019-09-01",
+                ]
+            }
+        },
+        {
+            "apiVersion": "2019-09-01",
             "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
             "name": "VirtualNetworkFirewall/PeerToVirtualNetworkPrivateLink",
             "location": "[resourceGroup().location]",
@@ -85,15 +89,16 @@
                 "allowGatewayTransit": "false",
                 "useRemoteGateways": "false",
                 "remoteVirtualNetwork": {
-                    "id":  "[resourceId('Microsoft.Network/virtualNetworks','VirtualNetworkPrivateLink')]"
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks','VirtualNetworkPrivateLink')]"
                 }
             },
-            "dependsOn":[
+            "dependsOn": [
                 "[resourceId('Microsoft.Network/virtualNetworks','VirtualNetworkFirewall')]",
                 "[resourceId('Microsoft.Network/virtualNetworks','VirtualNetworkPrivateLink')]"
             ]
-      },
-            {"apiVersion": "2019-09-01",
+        },
+        {
+            "apiVersion": "2019-09-01",
             "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
             "name": "VirtualNetworkPrivateLink/PeerToVirtualNewtorkFirewall",
             "location": "[resourceGroup().location]",
@@ -104,67 +109,69 @@
                 "allowGatewayTransit": "false",
                 "useRemoteGateways": "false",
                 "remoteVirtualNetwork": {
-                    "id":  "[resourceId('Microsoft.Network/virtualNetworks','VirtualNetworkFirewall')]"
+                    "id": "[resourceId('Microsoft.Network/virtualNetworks','VirtualNetworkFirewall')]"
                 }
             },
-            "dependsOn":[
+            "dependsOn": [
                 "[resourceId('Microsoft.Network/virtualNetworks','VirtualNetworkFirewall')]",
-                 "[resourceId('Microsoft.Network/virtualNetworks','VirtualNetworkPrivateLink')]"
+                "[resourceId('Microsoft.Network/virtualNetworks','VirtualNetworkPrivateLink')]"
             ]
-      },{
-          "name": "[variables('sqlServerName')]",
-          "type": "Microsoft.Sql/servers",
-          "apiVersion": "2015-05-01-preview",
-          "location": "[resourceGroup().location]",
-          "tags": {
-              "displayName": "Logical SQL Server"
-          },
-          "properties": {
-              "administratorLogin": "adminUsername",
-              "administratorLoginPassword": "[parameters('SqlServerPassword')]"
-          },
-          "resources": [
-              {
-                  "type": "firewallRules",
-                  "apiVersion": "2015-05-01-preview",
-                  "dependsOn": [
-                      "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
-                  ],
-                  "location": "[resourceGroup().location]",
-                  "name": "AllowAllWindowsAzureIps",
-                  "properties": {
-                      "startIpAddress": "0.0.0.0",
-                      "endIpAddress": "0.0.0.0"
-                  }
-              }
-          ]
-      },{
-          "name": "[variables('sqlDatabaseName')]",
-          "type": "Microsoft.Sql/servers/databases",
-          "apiVersion": "2014-04-01",
-          "location": "[resourceGroup().location]",
-          "tags": {
-              "displayName": "SQL Database"
-          },
-          "dependsOn": [
-              "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
-          ],
-          "properties": {
-              "collation": "SQL_Latin1_General_CP1_CI_AS",
-              "edition": "Basic",
-              "maxSizeBytes": "1073741824",
-              "requestedServiceObjectiveName": "Basic",
-              "sampleName":"AdventureWorksLT"
-          }
-      },
-      {
+        },
+        {
+            "name": "[variables('sqlServerName')]",
+            "type": "Microsoft.Sql/servers",
+            "apiVersion": "2015-05-01-preview",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "Logical SQL Server"
+            },
+            "properties": {
+                "administratorLogin": "adminUsername",
+                "administratorLoginPassword": "[parameters('SqlServerPassword')]"
+            },
+            "resources": [
+                {
+                    "type": "firewallRules",
+                    "apiVersion": "2015-05-01-preview",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+                    ],
+                    "location": "[resourceGroup().location]",
+                    "name": "AllowAllWindowsAzureIps",
+                    "properties": {
+                        "startIpAddress": "0.0.0.0",
+                        "endIpAddress": "0.0.0.0"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "[variables('sqlDatabaseName')]",
+            "type": "Microsoft.Sql/servers/databases",
+            "apiVersion": "2014-04-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "SQL Database"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+            ],
+            "properties": {
+                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                "edition": "Basic",
+                "maxSizeBytes": "1073741824",
+                "requestedServiceObjectiveName": "Basic",
+                "sampleName": "AdventureWorksLT"
+            }
+        },
+        {
             "apiVersion": "2019-04-01",
             "name": "PrivateEndpointSQLServer",
             "type": "Microsoft.Network/privateEndpoints",
             "location": "[resourceGroup().Location]",
             "tags": {
-              "displayName": "Private endpoint for the sql server"
-          },
+                "displayName": "Private endpoint for the sql server"
+            },
             "properties": {
                 "privateLinkServiceConnections": [
                     {
@@ -177,127 +184,132 @@
                         }
                     }
                 ],
-                "manualPrivateLinkServiceConnections": [],
+                "manualPrivateLinkServiceConnections": [
+                ],
                 "subnet": {
                     "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'VirtualNetworkPrivateLink', 'Subnet-2' )]"
                 }
             },
-            "dependsOn":[
-                 "[resourceId('Microsoft.Network/virtualNetworks','VirtualNetworkPrivateLink')]",
-                 "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks','VirtualNetworkPrivateLink')]",
+                "[resourceId('Microsoft.Sql/servers', variables('sqlServerName'))]"
             ]
 
-        },{
+        },
+        {
             "name": "AzureFirewallPrivateLinkDemo",
             "type": "Microsoft.Network/azureFirewalls",
             "apiVersion": "2019-04-01",
             "location": "[resourceGroup().location]",
-            "tags": {"displayName":"Azure Firewall"},
+            "tags": {
+                "displayName": "Azure Firewall"
+            },
             "properties": {
-               "applicationRuleCollections": [
-                   {
-                       "name": "appCollectionName1",
-                       "properties": {
-                           "priority": "100",
-                           "action": {
-                               "type": "Allow"
-                           },
-                           "rules": [
-                               {
-                                   "name": "appRuleName1",
-                                   "description": "appRuleDescription",
-                                   "sourceAddresses": [
-                                       "10.0.0.4"
-                                   ],
-                                   "protocols": [
-                                      {
-                                          "protocolType": "Http",
-                                          "port": "80"
-                                      }
-                                   ],
-                                   "targetFqdns": [
-                                       "www.microsoft.com"
-                                   ],
-                                   "fqdnTags": []
-                               }
-                           ]
-                       }
-                   }
-               ],
-               "natRuleCollections": [
-                   {
-                      "name": "natCollectionName1",
-                       "properties": {
-                           "priority": "100",
-                           "action": {
-                              "type": "Dnat"
-                           },
-                           "rules": [
-                              {
-                                  "name": "natRuleName1",
-                                  "description": "natRuleDescription",
-                                  "sourceAddresses": [
-                                     "*"
-                                  ],
-                                  "destinationAddresses": [
-                                      "[reference(resourceId('Microsoft.Network/publicIPAddresses', 'PublicIPAzureFirewall')).ipAddress]"
-                                  ],
-                                  "destinationPorts": [
-                                      "1433"
-                                  ],
-                                  "protocols": [
-                                      "TCP"
-                                  ],
-                                  "translatedAddress": "10.1.1.4",
-                                  "translatedPort": "1433"
-                              }
-                           ]
-                       }
-                   }
+                "applicationRuleCollections": [
+                    {
+                        "name": "appCollectionName1",
+                        "properties": {
+                            "priority": "100",
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "appRuleName1",
+                                    "description": "appRuleDescription",
+                                    "sourceAddresses": [
+                                        "10.0.0.4"
+                                    ],
+                                    "protocols": [
+                                        {
+                                            "protocolType": "Http",
+                                            "port": "80"
+                                        }
+                                    ],
+                                    "targetFqdns": [
+                                        "www.microsoft.com"
+                                    ],
+                                    "fqdnTags": [
+                                    ]
+                                }
+                            ]
+                        }
+                    }
                 ],
-               "networkRuleCollections": [
-                   {
-                      "name": "networkCollectionName",
-                       "properties": {
-                           "priority": "100",
-                           "action": {
-                              "type": "Deny"
-                           },
-                           "rules": [
-                              {
-                                  "name": "networkRuleName",
-                                  "description": "networkRuleDescription",
-                                  "sourceAddresses": [
-                                     "10.0.0.4"
-                                  ],
-                                  "destinationAddresses": [
-                                      "10.0.1.4"
-                                  ],
-                                  "destinationPorts": [
-                                      "1"
-                                  ],
-                                  "protocols": [
-                                      "TCP"
-                                  ]
-                              }
-                           ]
-                       }
-                   }
+                "natRuleCollections": [
+                    {
+                        "name": "natCollectionName1",
+                        "properties": {
+                            "priority": "100",
+                            "action": {
+                                "type": "Dnat"
+                            },
+                            "rules": [
+                                {
+                                    "name": "natRuleName1",
+                                    "description": "natRuleDescription",
+                                    "sourceAddresses": [
+                                        "*"
+                                    ],
+                                    "destinationAddresses": [
+                                        "[reference(resourceId('Microsoft.Network/publicIPAddresses', 'PublicIPAzureFirewall')).ipAddress]"
+                                    ],
+                                    "destinationPorts": [
+                                        "1433"
+                                    ],
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "translatedAddress": "10.1.1.4",
+                                    "translatedPort": "1433"
+                                }
+                            ]
+                        }
+                    }
                 ],
-               "ipConfigurations": [
-                   {
-                       "name": "ipConfigName",
-                       "properties": {
-                           "subnet": {
-                               "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'VirtualNetworkFirewall', 'AzureFirewallSubnet')]"
-                           },
-                           "publicIPAddress": {
-                               "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'PublicIPAzureFirewall')]"
-                           }
-                       }
-                   }
-               ]
-             },
+                "networkRuleCollections": [
+                    {
+                        "name": "networkCollectionName",
+                        "properties": {
+                            "priority": "100",
+                            "action": {
+                                "type": "Deny"
+                            },
+                            "rules": [
+                                {
+                                    "name": "networkRuleName",
+                                    "description": "networkRuleDescription",
+                                    "sourceAddresses": [
+                                        "10.0.0.4"
+                                    ],
+                                    "destinationAddresses": [
+                                        "10.0.1.4"
+                                    ],
+                                    "destinationPorts": [
+                                        "1"
+                                    ],
+                                    "protocols": [
+                                        "TCP"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "ipConfigurations": [
+                    {
+                        "name": "ipConfigName",
+                        "properties": {
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'VirtualNetworkFirewall', 'AzureFirewallSubnet')]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'PublicIPAzureFirewall')]"
+                            }
+                        }
+                    }
+                ]
+            },
             "dependsOn": [
                 "[resourceId('Microsoft.Network/publicIPAddresses', 'PublicIPAzureFirewall')]",
                 "[resourceId('Microsoft.Network/virtualNetworks','VirtualNetworkFirewall')]"
@@ -309,11 +321,11 @@
             "apiVersion": "2019-04-01",
             "location": "[resourceGroup().location]",
             "sku": {
-               "name": "standard"
-               },
+                "name": "standard"
+            },
             "tags": {
                 "createdFor": "AzureFirewallPrivateLinkDemo",
-                "displayName":"Public IP Address for Azure Firewall"
+                "displayName": "Public IP Address for Azure Firewall"
             },
             "properties": {
                 "publicIPAllocationMethod": "Static",
@@ -324,7 +336,7 @@
         }
     ],
     "outputs": {
-       
     },
-    "functions": []
+    "functions": [
+    ]
 }
